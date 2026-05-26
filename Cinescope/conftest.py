@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, ".")
+
 import pytest
 import requests
 from constants import BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
@@ -51,3 +54,24 @@ def session():
 @pytest.fixture(scope="session")
 def api_manager(session):
     return ApiManager(session)
+
+ADMIN_CREDS = ("api1@gmail.com", "asdqwe123Q")
+
+@pytest.fixture(scope="session")
+def admin_session(session,api_manager):
+    api_manager.auth_api.authenticate(ADMIN_CREDS)
+    return session
+
+@pytest.fixture
+def movie(admin_session, api_manager):  # scope="function" — новый фильм для каждого теста
+    movie_data = {
+        "name": "Тестовый фильм " + DataGenerator.generate_random_name(),
+        "description": "Тестовое описание",
+        "price": 500,
+        "location": "MSK",
+        "published": True,
+        "genreId": 1
+    }
+    response = api_manager.movies_api.create_movie(movie_data, expected_status=201)
+    movie = response.json()
+    yield movie
